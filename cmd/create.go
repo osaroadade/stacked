@@ -70,6 +70,26 @@ to quickly create a Cobra application.`,
 		} else {
 			fullBody = body + stackLink
 		}
+
+		cmdArgs := []string{
+			"pr", "create",
+			"--title", title,
+			"--body", fullBody,
+			"--base", parentBranch,
+			"--head", currentBranch,
+		}
+
+		fmt.Println("📤 Creating PR via GitHub CLI...")
+		createCmd := exec.Command("gh", cmdArgs...)
+		createCmd.Stdout = os.Stdout
+		createCmd.Stderr = os.Stderr
+
+		if err := createCmd.Run(); err != nil {
+			fmt.Println("❌ Failed to create PR:", err)
+			return
+		}
+
+		fmt.Println("✅ PR created successfully!")
 	},
 }
 

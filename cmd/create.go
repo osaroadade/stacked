@@ -93,11 +93,6 @@ to quickly create a Cobra application.`,
 			return
 		}
 
-		if err := createCmd.Run(); err != nil {
-			fmt.Println("❌ Failed to create PR:", err)
-			return
-		}
-
 		prURL := strings.TrimSpace(prOutput.String())
 		fmt.Println("✅ PR created successfully!", prURL)
 
@@ -109,7 +104,7 @@ to quickly create a Cobra application.`,
 		}
 		prNumber, _ := strconv.Atoi(matches[1])
 
-		err = stack.WriteSampleStack(currentBranch, parentBranch, prNumber)
+		err = stack.WriteBranchEntry(currentBranch, parentBranch, prNumber)
 		if err != nil {
 			fmt.Println("⚠️ Could not write to .stack.yml:", err)
 		}
@@ -199,9 +194,7 @@ func getGitHubRepoURL() (string, error) {
 	}
 
 	// Trim .git suffix
-	if strings.HasSuffix(rawURL, ".git") {
-		rawURL = strings.TrimSuffix(rawURL, ".git")
-	}
+	rawURL = strings.TrimSuffix(rawURL, ".git")
 
 	return rawURL, nil
 }

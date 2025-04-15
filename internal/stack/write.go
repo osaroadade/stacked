@@ -17,7 +17,7 @@ type StackData struct {
 	Stack map[string]StackEntry `yaml:"stack"`
 }
 
-func WriteSampleStack(branch, parent string, pr int) error {
+func WriteBranchEntry(branch, parent string, pr int) error {
 	entry := StackEntry{
 		Parent: parent,
 		PR:     &pr,
@@ -49,5 +49,5 @@ func WriteSampleStack(branch, parent string, pr int) error {
 	}
 
 	fmt.Println("📝 .stack.yml updated successfully.")
-	return nil
+	return GenerateMarkdown(data)
 }

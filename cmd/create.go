@@ -56,16 +56,7 @@ to quickly create a Cobra application.`,
 		body, _ := reader.ReadString('\n')
 		body = strings.TrimSpace(body)
 
-		repoURL, err := getGitHubRepoURL()
-		if err != nil {
-			fmt.Println("⚠️ Could not get remote repo URL:", err)
-			repoURL = "https://github.com/unkown/repo" // fallback
-		}
-
-		stackLink := fmt.Sprintf(
-			"\n\n---\n🔗 This PR is part of a stack. See full context: [stack.md](%s/blob/%s/stack.md)",
-			repoURL, currentBranch,
-		)
+		stackLink := "\n\n---\n🔗 This PR is part of a stack. See full context: [stack.md](.github/stack.md)"
 
 		var fullBody string
 		if body == "" {
@@ -173,28 +164,4 @@ func findParentBranch(currentBranch string) (string, error) {
 	}
 
 	return bestParent, nil
-}
-
-func getGitHubRepoURL() (string, error) {
-	out, err := exec.Command("git", "remote", "get-url", "origin").Output()
-	if err != nil {
-		return "", err
-	}
-	rawURL := strings.TrimSpace(string(out))
-
-	// Convert SSH URL to HTTPS
-	if strings.HasPrefix(rawURL, "git@") {
-		// Example: git@github.com:user/repo.git
-		rawURL = strings.Replace(rawURL, "git@", "https://", 1)
-		rawURL = strings.Replace(rawURL, ":", "/", 1)
-	} else if strings.HasPrefix(rawURL, "https://") {
-		// already done
-	} else {
-		return "", fmt.Errorf("unsupported remote URL format")
-	}
-
-	// Trim .git suffix
-	rawURL = strings.TrimSuffix(rawURL, ".git")
-
-	return rawURL, nil
 }

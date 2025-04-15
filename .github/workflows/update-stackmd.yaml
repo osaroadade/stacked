@@ -1,11 +1,10 @@
 name: Update Stack Markdown
 on:
     push:
-        branches:
-            - '**'
+        branches-ignore:
+            - main
     pull_request:
-        branches:
-            - '**'
+        types: [opened, synchronize, reopened]
 
 jobs:
     generate-stackmd:
@@ -31,7 +30,7 @@ jobs:
                 if [[ -n $(git status --porcelain .github/stack.md) ]]; then
                   git add .github/stack.md
                   git commit -m "chore: auto-update stack.md"
-                  git push
+                  git push origin HEAD:${{ github.ref_name }}
                 else
-                  echo "No changes detected."
+                  echo "No changes to commit."
                 fi

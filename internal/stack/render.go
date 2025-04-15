@@ -45,5 +45,5 @@ func GenerateMarkdown(data StackData) error {
 		output += "\n"
 	}
 
-	return os.WriteFile("stack.md", []byte(output), 0644)
+	return os.WriteFile(".github/stack.md", []byte(output), 0644)
 }

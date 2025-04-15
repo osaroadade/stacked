@@ -1,0 +1,4 @@
+stack:
+    feature/stack-tracking:
+        parent: feature/base
+        status: open

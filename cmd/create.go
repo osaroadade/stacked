@@ -5,9 +5,11 @@ package cmd
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -82,7 +84,8 @@ to quickly create a Cobra application.`,
 
 		fmt.Println("📤 Creating PR via GitHub CLI...")
 		createCmd := exec.Command("gh", cmdArgs...)
-		createCmd.Stdout = os.Stdout
+		var prOutput bytes.Buffer
+		createCmd.Stdout = &prOutput
 		createCmd.Stderr = os.Stderr
 
 		if err := createCmd.Run(); err != nil {
@@ -90,11 +93,25 @@ to quickly create a Cobra application.`,
 			return
 		}
 
-		fmt.Println("✅ PR created successfully!")
+		if err := createCmd.Run(); err != nil {
+			fmt.Println("❌ Failed to create PR:", err)
+			return
+		}
 
-		err = stack.WriteSampleStack()
+		prURL := strings.TrimSpace(prOutput.String())
+		fmt.Println("✅ PR created successfully!", prURL)
+
+		re := regexp.MustCompile(`/pull/(\d+)$`)
+		matches := re.FindStringSubmatch(prURL)
+		if len(matches) < 2 {
+			fmt.Println("⚠️ Could not extract PR number from URL:", prURL)
+			return
+		}
+		prNumber, _ := strconv.Atoi(matches[1])
+
+		err = stack.WriteSampleStack(currentBranch, parentBranch, prNumber)
 		if err != nil {
-			fmt.Println("⚠️ Could not write stack.yml:", err)
+			fmt.Println("⚠️ Could not write to .stack.yml:", err)
 		}
 	},
 }

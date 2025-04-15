@@ -9,7 +9,7 @@ import (
 
 type StackEntry struct {
 	Parent string `yaml:"parent"`
-	PR     string `yaml:"pr,omitempty"`
+	PR     *int   `yaml:"pr,omitempty"`
 	Status string `yaml:"status"`
 }
 
@@ -17,17 +17,28 @@ type StackData struct {
 	Stack map[string]StackEntry `yaml:"stack"`
 }
 
-func WriteSampleStack() error {
-	data := StackData{
-		Stack: map[string]StackEntry{
-			"feature/stack-tracking": {
-				Parent: "feature/base",
-				Status: "open",
-			},
-		},
+func WriteSampleStack(branch, parent string, pr int) error {
+	entry := StackEntry{
+		Parent: parent,
+		PR:     &pr,
+		Status: "open",
 	}
 
-	out, err := yaml.Marshal(&data)
+	// Load existing file if it exists
+	var data StackData
+	content, err := os.ReadFile(".stack.yaml")
+	if err == nil {
+		yaml.Unmarshal(content, &data)
+	} else {
+		data = StackData{
+			Stack: make(map[string]StackEntry),
+		}
+	}
+
+	// Update/add entry
+	data.Stack[branch] = entry
+
+	out, err := yaml.Marshal(data)
 	if err != nil {
 		return err
 	}
@@ -37,6 +48,6 @@ func WriteSampleStack() error {
 		return err
 	}
 
-	fmt.Println("📝 .stack.yml written successfully.")
+	fmt.Println("📝 .stack.yml updated successfully.")
 	return nil
 }

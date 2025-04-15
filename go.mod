@@ -1,6 +1,6 @@
 module github.com/osaroadade/stacked
 
-go 1.24
+go 1.22
 
 require github.com/spf13/cobra v1.9.1 // direct
 

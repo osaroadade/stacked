@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/osaroadade/stacked/internal/stack"
 	"github.com/spf13/cobra"
 )
 
@@ -90,6 +91,11 @@ to quickly create a Cobra application.`,
 		}
 
 		fmt.Println("✅ PR created successfully!")
+
+		err = stack.WriteSampleStack()
+		if err != nil {
+			fmt.Println("⚠️ Could not write stack.yml:", err)
+		}
 	},
 }
 

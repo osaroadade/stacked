@@ -28,7 +28,7 @@ jobs:
 
             - name: 🔍 Check for changes
               run: |
-                git config --local user.name "stacked-bot"
+                git config --local user.name "mubbie"
                 git config --global user.email "stacked-bot@users.noreply.github.com"
                 if [[ -n $(git status --porcelain .github/stack.md) ]]; then
                   git add .github/stack.md

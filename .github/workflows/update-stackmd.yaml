@@ -28,8 +28,8 @@ jobs:
 
             - name: 🔍 Check for changes
               run: |
-                git config --local user.name "stacked[bot]"
-                git config --global user.email "stacked@users.noreply.github.com"
+                git config --local user.name "stacked-bot"
+                git config --global user.email "stacked-bot@users.noreply.github.com"
                 if [[ -n $(git status --porcelain .github/stack.md) ]]; then
                   git add .github/stack.md
                   git commit -m "chore: auto-update stack.md"

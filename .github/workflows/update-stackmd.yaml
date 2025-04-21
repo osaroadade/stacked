@@ -1,0 +1,39 @@
+name: Update Stack Markdown
+on:
+    push:
+        branches-ignore:
+            - main
+    pull_request:
+        types: [opened, synchronize, reopened]
+
+permissions:
+    contents: write
+
+jobs:
+    generate-stackmd:
+        runs-on: ubuntu-latest
+        steps:
+            - name: ✨ Checkout code
+              uses: actions/checkout@v3
+              with:
+                fetch-depth: 0
+
+            - name: ☕️ Set up Go
+              uses: actions/setup-go@v4
+              with:
+                go-version: '1.24'
+
+            - name: 🔨 Build stack..md
+              run: go run ./cmd/genstack/main.go
+
+            - name: 🔍 Check for changes
+              run: |
+                git config --local user.name "github-actions[bot]"
+                git config --global user.email "github-actions[bot]@users.noreply.github.com"
+                if [[ -n $(git status --porcelain .github/stack.md) ]]; then
+                  git add .github/stack.md
+                  git commit -m "chore: auto-update stack.md"
+                  git push origin HEAD:${{ github.ref_name }}
+                else
+                  echo "No changes to commit."
+                fi

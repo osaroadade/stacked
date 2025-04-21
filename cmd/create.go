@@ -4,10 +4,16 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
+	"regexp"
+	"strconv"
 	"strings"
 
+	"github.com/osaroadade/stacked/internal/stack"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +36,69 @@ to quickly create a Cobra application.`,
 		}
 
 		currentBranch := strings.TrimSpace(string(output))
-		fmt.Println("🌿 Current branch::", currentBranch)
+		fmt.Println("🌿 Current branch:", currentBranch)
+
+		// Try to detect parent branch
+		parentBranch, err := findParentBranch(currentBranch)
+		if err != nil {
+			fmt.Println("⚠️ Could not determine parent branch:", err)
+		} else {
+			fmt.Println("🔗 Detected parent branch:", parentBranch)
+		}
+
+		reader := bufio.NewReader(os.Stdin)
+
+		fmt.Print("📝 Enter PR title: ")
+		title, _ := reader.ReadString('\n')
+		title = strings.TrimSpace(title)
+
+		fmt.Print("📝 Enter PR description (optional): ")
+		body, _ := reader.ReadString('\n')
+		body = strings.TrimSpace(body)
+
+		stackLink := "\n\n---\n🔗 This PR is part of a stack. See full context: [stack.md](.github/stack.md)"
+
+		var fullBody string
+		if body == "" {
+			fullBody = stackLink
+		} else {
+			fullBody = body + stackLink
+		}
+
+		cmdArgs := []string{
+			"pr", "create",
+			"--title", title,
+			"--body", fullBody,
+			"--base", parentBranch,
+			"--head", currentBranch,
+		}
+
+		fmt.Println("📤 Creating PR via GitHub CLI...")
+		createCmd := exec.Command("gh", cmdArgs...)
+		var prOutput bytes.Buffer
+		createCmd.Stdout = &prOutput
+		createCmd.Stderr = os.Stderr
+
+		if err := createCmd.Run(); err != nil {
+			fmt.Println("❌ Failed to create PR:", err)
+			return
+		}
+
+		prURL := strings.TrimSpace(prOutput.String())
+		fmt.Println("✅ PR created successfully!", prURL)
+
+		re := regexp.MustCompile(`/pull/(\d+)$`)
+		matches := re.FindStringSubmatch(prURL)
+		if len(matches) < 2 {
+			fmt.Println("⚠️ Could not extract PR number from URL:", prURL)
+			return
+		}
+		prNumber, _ := strconv.Atoi(matches[1])
+
+		err = stack.WriteBranchEntry(currentBranch, parentBranch, prNumber)
+		if err != nil {
+			fmt.Println("⚠️ Could not write to .stack.yml:", err)
+		}
 	},
 }
 
@@ -46,4 +114,54 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// createCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func findParentBranch(currentBranch string) (string, error) {
+	// Get all local branches
+	branchesOut, err := exec.Command("git", "branch", "--format=%(refname:short)").Output()
+	if err != nil {
+		return "", err
+	}
+	allBranches := strings.Split(strings.TrimSpace(string(branchesOut)), "\n")
+
+	// Try to find the best parent
+	var bestParent string
+	var bestDistance int
+
+	for _, branch := range allBranches {
+		branch = strings.TrimSpace(branch)
+		if branch == currentBranch {
+			continue
+		}
+
+		// Run: git merge-base currentBranch otherBranch
+		mbCmd := exec.Command("git", "merge-base", currentBranch, branch)
+		mergeBase, err := mbCmd.Output()
+		if err != nil {
+			continue // Skip if no common base
+		}
+
+		// Count commits between merge base and current branch
+		countCmd := exec.Command("git", "rev-list", "--count", currentBranch+"^@", "^"+strings.TrimSpace(string(mergeBase)))
+		countOut, err := countCmd.Output()
+		if err != nil {
+			continue
+		}
+
+		count, err := strconv.Atoi(strings.TrimSpace(string(countOut)))
+		if err != nil {
+			continue
+		}
+
+		if bestParent == "" || count < bestDistance {
+			bestParent = branch
+			bestDistance = count
+		}
+	}
+
+	if bestParent == "" {
+		return "", fmt.Errorf("could not determine parent branch")
+	}
+
+	return bestParent, nil
 }

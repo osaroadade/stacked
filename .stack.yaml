@@ -1,0 +1,12 @@
+stack:
+    feature/final-touch:
+        parent: feature/generate-md
+        pr: 4
+        status: open
+    feature/generate-md:
+        parent: feature/stack-tracking
+        pr: 3
+        status: open
+    feature/stack-tracking:
+        parent: feature/base
+        status: open
